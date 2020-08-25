@@ -43,107 +43,50 @@ namespace CodeLuau
 				if (!string.IsNullOrWhiteSpace(LastName))
 				{
 					if (!string.IsNullOrWhiteSpace(Email))
-					{
-						//put list of employers in array
-						var emps = new List<string>() { "Pluralsight", "Microsoft", "Google" };
+                    {
+                        //put list of employers in array
+                        List<string> emps = EmployersToArray();
 
-						good = Exp > 10 || HasBlog || Certifications.Count() > 3 || emps.Contains(Employer);
+                        good = Exp > 10 || HasBlog || Certifications.Count() > 3 || emps.Contains(Employer);
 
-						if (!good)
-						{
-							//need to get just the domain from the email
-							string emailDomain = Email.Split('@').Last();
+                        if (!good)
+                        {
 
-							if (!domains.Contains(emailDomain) && (!(Browser.Name == WebBrowser.BrowserName.InternetExplorer && Browser.MajorVersion < 9)))
-							{
-								good = true;
-							}
-						}
+                            good = GetDomain(good, domains);
+                        }
 
-						if (good)
-						{
-							if (Sessions.Count() != 0)
-							{
-								foreach (var session in Sessions)
-								{
-									//foreach (var tech in nt)
-									//{
-									//    if (session.Title.Contains(tech))
-									//    {
-									//        session.Approved = true;
-									//        break;
-									//    }
-									//}
+                        if (good)
+                        {
+                            if (IsSession())
+                            {
+                                foreach (var session in Sessions)
+                                {
+                                    appr = SubmitOt(appr, ot, session);
+                                }
+                            }
+                            else
+                            {
+                                return new RegisterResponse(RegisterError.NoSessionsProvided);
+                            }
 
-									foreach (var tech in ot)
-									{
-										if (session.Title.Contains(tech) || session.Description.Contains(tech))
-										{
-											session.Approved = false;
-											break;
-										}
-										else
-										{
-											session.Approved = true;
-											appr = true;
-										}
-									}
-								}
-							}
-							else
-							{
-								return new RegisterResponse(RegisterError.NoSessionsProvided);
-							}
+                            if (appr)
+                            {
 
-							if (appr)
-							{
-								//if we got this far, the speaker is approved
-								//let's go ahead and register him/her now.
-								//First, let's calculate the registration fee. 
-								//More experienced speakers pay a lower fee.
-								if (Exp <= 1)
-								{
-									RegistrationFee = 500;
-								}
-								else if (Exp >= 2 && Exp <= 3)
-								{
-									RegistrationFee = 250;
-								}
-								else if (Exp >= 4 && Exp <= 5)
-								{
-									RegistrationFee = 100;
-								}
-								else if (Exp >= 6 && Exp <= 9)
-								{
-									RegistrationFee = 50;
-								}
-								else
-								{
-									RegistrationFee = 0;
-								}
+                                FeeCalculation();
 
-
-								//Now, save the speaker and sessions to the db.
-								try
-								{
-									speakerId = repository.SaveSpeaker(this);
-								}
-								catch (Exception e)
-								{
-									//in case the db call fails 
-								}
-							}
-							else
-							{
-								return new RegisterResponse(RegisterError.NoSessionsApproved);
-							}
-						}
-						else
-						{
-							return new RegisterResponse(RegisterError.SpeakerDoesNotMeetStandards);
-						}
-					}
-					else
+                                speakerId = SaveSessionsToDB(repository, speakerId);
+                            }
+                            else
+                            {
+                                return new RegisterResponse(RegisterError.NoSessionsApproved);
+                            }
+                        }
+                        else
+                        {
+                            return new RegisterResponse(RegisterError.SpeakerDoesNotMeetStandards);
+                        }
+                    }
+                    else
 					{
 						return new RegisterResponse(RegisterError.EmailRequired);
 					}
@@ -161,5 +104,85 @@ namespace CodeLuau
 			//if we got this far, the speaker is registered.
 			return new RegisterResponse((int)speakerId);
 		}
-	}
+
+        private static bool SubmitOt(bool appr, List<string> ot, Session session)
+        {
+            foreach (var tech in ot)
+            {
+                if (session.Title.Contains(tech) || session.Description.Contains(tech))
+                {
+                    session.Approved = false;
+                    break;
+                }
+                else
+                {
+                    session.Approved = true;
+                    appr = true;
+
+                }
+            }
+
+            return appr;
+        }
+
+        private static List<string> EmployersToArray()
+        {
+            return new List<string>() { "Pluralsight", "Microsoft", "Google" };
+        }
+
+        private bool IsSession()
+        {
+            return Sessions.Count() != 0;
+        }
+
+        private global::System.Int32? SaveSessionsToDB(IRepository repository, int? speakerId)
+        {
+            try
+            {
+                speakerId = repository.SaveSpeaker(this);
+            }
+            catch (Exception e)
+            {
+                //in case the db call fails 
+            }
+
+            return speakerId;
+        }
+
+        private void FeeCalculation()
+        {
+            if (Exp <= 1)
+            {
+                RegistrationFee = 500;
+            }
+            else if (Exp >= 2 && Exp <= 3)
+            {
+                RegistrationFee = 250;
+            }
+            else if (Exp >= 4 && Exp <= 5)
+            {
+                RegistrationFee = 100;
+            }
+            else if (Exp >= 6 && Exp <= 9)
+            {
+                RegistrationFee = 50;
+            }
+            else
+            {
+                RegistrationFee = 0;
+            }
+        }
+
+        private bool GetDomain(bool good, List<string> domains)
+        {
+            string emailDomain = Email.Split('@').Last();
+
+            if (!domains.Contains(emailDomain) && (!(Browser.Name == WebBrowser.BrowserName.InternetExplorer && Browser.MajorVersion < 9)))
+            {
+                good = true;
+            }
+
+            return good;
+        }
+    }
 }
