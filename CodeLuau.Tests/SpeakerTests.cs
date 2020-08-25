@@ -9,49 +9,49 @@ namespace CodeLuau.Tests
 	{
 		private FakeRepository repository = new FakeRepository();
 
-		[TestMethod]
-		public void Register_EmptyFirstName_ReturnsFirstNameRequired()
-		{
-			//arrange
-			var speaker = GetSpeakerThatWouldBeApproved();
-			speaker.FirstName = "";
+        [TestMethod]
+        public void Register_EmptyFirstName_ReturnsFirstNameRequired()
+        {
+            //arrange
+            var speaker = GetSpeakerThatWouldBeApproved();
+            speaker.FirstName = "";
 
-			//act
-			var result = speaker.Register(repository);
+            //act
+            var result = speaker.Register(repository);
 
-			//assert
-			Assert.AreEqual(RegisterError.FirstNameRequired, result.Error);
-		}
+            //assert
+            Assert.AreEqual(RegisterError.FirstNameRequired, result.Error);
+        }
 
-		[TestMethod]
-		public void Register_EmptyLastName_ReturnsLastNameRequired()
-		{
-			//arrange
-			var speaker = GetSpeakerThatWouldBeApproved();
-			speaker.LastName = "";
+        [TestMethod]
+        public void Register_EmptyLastName_ReturnsLastNameRequired()
+        {
+            //arrange
+            var speaker = GetSpeakerThatWouldBeApproved();
+            speaker.LastName = "";
 
-			//act
-			var result = speaker.Register(repository);
+            //act
+            var result = speaker.Register(repository);
 
-			//assert
-			Assert.AreEqual(RegisterError.LastNameRequired, result.Error);
-		}
+            //assert
+            Assert.AreEqual(RegisterError.LastNameRequired, result.Error);
+        }
 
-		[TestMethod]
-		public void Register_EmptyEmail_ReturnsEmailRequired()
-		{
-			//arrange
-			var speaker = GetSpeakerThatWouldBeApproved();
-			speaker.Email = "";
+        [TestMethod]
+        public void Register_EmptyEmail_ReturnsEmailRequired()
+        {
+            //arrange
+            var speaker = GetSpeakerThatWouldBeApproved();
+            speaker.Email = "";
 
-			//act
-			var result = speaker.Register(repository);
+            //act
+            var result = speaker.Register(repository);
 
-			//assert
-			Assert.AreEqual(RegisterError.EmailRequired, result.Error);
-		}
+            //assert
+            Assert.AreEqual(RegisterError.EmailRequired, result.Error);
+        }
 
-		[TestMethod]
+        [TestMethod]
 		public void Register_WorksForPrestigiousEmployerButHasRedFlags_ReturnsSpeakerId()
 		{
 			//arrange
@@ -161,11 +161,8 @@ namespace CodeLuau.Tests
 		#region Helpers
 		private Speaker GetSpeakerThatWouldBeApproved()
 		{
-			return new Speaker()
+			return new Speaker("First","Last", "example@domain.com")
 			{
-				FirstName = "First",
-				LastName = "Last",
-				Email = "example@domain.com",
 				Employer = "Example Employer",
 				HasBlog = true,
 				Browser = new WebBrowser("test", 1),
@@ -174,7 +171,7 @@ namespace CodeLuau.Tests
 				BlogURL = "",
 				Sessions = new System.Collections.Generic.List<Session>() {
 				new Session("test title", "test description")
-			}
+				}
 			};
 		}
 
