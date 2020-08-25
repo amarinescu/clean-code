@@ -5,64 +5,72 @@ using System.Linq;
 
 namespace CodeLuau
 {
-	/// <summary>
-	/// Represents a single speaker
-	/// </summary>
-	public class Speaker
-	{
-		public string FirstName { get; set; }
-		public string LastName { get; set; }
-		public string Email { get; set; }
-		public int? Experience { get; set; }
-		public bool HasBlog { get; set; }
-		public string BlogUrl { get; set; }
-		public WebBrowser Browser { get; set; }
-		public List<string> Certifications { get; set; }
-		public string Employer { get; set; }
-		public int RegistrationFee { get; set; }
-		public List<Session> Sessions { get; set; }
+    public class Speaker
+    {
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Email { get; set; }
+        public int? Experience { get; set; }
+        public bool HasBlog { get; set; }
+        public WebBrowser Browser { get; set; }
+        public List<string> Certifications { get; set; }
+        public string Employer { get; set; }
+        public int RegistrationFee { get; set; }
+        public List<Session> Sessions { get; set; }
 
-		/// <summary>
-		/// Register a speaker
-		/// </summary>
-		/// <returns>speakerID</returns>
-		public RegisterSpeaker Register(IRepository repository)
-		{
+        private const int RequiredCertifications = 3;
+        private const int RequiredExperience = 10;
+        private const int MaxVersionBrowser = 9;
+        private const int MinExpLev1 = 1;
+        private const int MinExpLev2 = 2;
+        private const int MinExpLev3 = 3;
+        private const int MinExpLev4 = 4;
+        private const int MinExpLev5 = 5;
+        private const int MinExpLev6 = 6;
+        private const int MinExpLev7 = 9;
+        private const int RegFeeLevel1 = 500;
+        private const int RegFeeLevel2 = 250;
+        private const int RegFeeLevel3 = 100;
+        private const int RegFeeLevel4 = 50;
+        private const int RegFeeLevel5 = 0;
+        private readonly List<string> _technologies = new List<string>() { "Cobol", "Punch Cards", "Commodore", "VBScript" };
+        private readonly List<string> _employers = new List<string>() { "Pluralsight", "Microsoft", "Google" };
+        private readonly List<string> _domains = new List<string>() { "aol.com", "prodigy.com", "compuserve.com" };
 
 
-            var response= Register_RegisterResponse();
-            if(response !=null)
-                 return response;
+        public RegisterSpeaker Register(IRepository repository)
+        {
+            var response = ValidateSpeaker();
+            if (response != null)
+                return response;
 
+            bool isValid = MeetsStandartsSpeaker(_employers);
 
-            var employers = new List<string>() { "Pluralsight", "Microsoft", "Google" };
-
-            bool meetsCriteria = Experience > 10 || HasBlog || Certifications.Count() > 3 || employers.Contains(Employer);
-
-            if (!meetsCriteria)
+            if (!isValid)
             {
-                meetsCriteria = FilterByDomain();
+                isValid = FilterByDomain();
             }
 
-            if (!meetsCriteria)
+            if (!isValid)
                 return new RegisterSpeaker(RegisterError.SpeakerDoesNotMeetStandards);
-            
 
-
-            var technologies = new List<string>() { "Cobol", "Punch Cards", "Commodore", "VBScript" };
-
-            var isApproved = Register_IsApproved(technologies);
+            var isApproved = Register_IsApproved(_technologies);
 
             if (!isApproved)
                 return new RegisterSpeaker(RegisterError.NoSessionsApproved);
 
-                    
-            CalculateRegistrationFee();
+
+            RegistrationFee = CalculateRegistrationFee();
             int? speakerId = repository.SaveSpeaker(this);
             return new RegisterSpeaker((int)speakerId);
-		}
+        }
 
-        private RegisterSpeaker Register_RegisterResponse()
+        private bool MeetsStandartsSpeaker(List<string> employers)
+        {
+            return Experience > RequiredExperience || HasBlog || Certifications.Count() > RequiredCertifications || employers.Contains(Employer);
+        }
+
+        private RegisterSpeaker ValidateSpeaker()
         {
             if (string.IsNullOrWhiteSpace(FirstName))
                 return new RegisterSpeaker(RegisterError.FirstNameRequired);
@@ -80,13 +88,11 @@ namespace CodeLuau
 
         private bool FilterByDomain()
         {
-            bool meetsCriteria=false;
+            bool meetsCriteria = false;
             string emailDomain = GetEmailDomain();
 
-            var domains = new List<string>() {"aol.com", "prodigy.com", "compuserve.com"};
-
-            if (!domains.Contains(emailDomain) &&
-                (!(Browser.Name == WebBrowser.BrowserName.InternetExplorer && Browser.MajorVersion < 9)))
+            if (!_domains.Contains(emailDomain) &&
+                (!(Browser.Name == WebBrowser.BrowserName.InternetExplorer && Browser.MajorVersion < MaxVersionBrowser)))
             {
                 meetsCriteria = true;
             }
@@ -125,28 +131,29 @@ namespace CodeLuau
             return session.Title.Contains(technology) || session.Description.Contains(technology);
         }
 
-        private void CalculateRegistrationFee()
-        { //More experienced speakers pay a lower fee.
-            if (Experience <= 1)
+        private int CalculateRegistrationFee()
+        { 
+            if (Experience <= MinExpLev1)
             {
-                RegistrationFee = 500;
+                return RegFeeLevel1;
             }
-            else if (Experience >= 2 && Experience <= 3)
+
+            if (Experience >= MinExpLev2 && Experience <= MinExpLev3)
             {
-                RegistrationFee = 250;
+                return RegFeeLevel2;
             }
-            else if (Experience >= 4 && Experience <= 5)
+
+            if (Experience >= MinExpLev4 && Experience <= MinExpLev5)
             {
-                RegistrationFee = 100;
+                return RegFeeLevel3;
             }
-            else if (Experience >= 6 && Experience <= 9)
+
+            if (Experience >= MinExpLev6 && Experience <= MinExpLev7)
             {
-                RegistrationFee = 50;
+                return RegFeeLevel4;
             }
-            else
-            {
-                RegistrationFee = 0;
-            }
+
+            return RegFeeLevel5;
         }
     }
 }

@@ -7,7 +7,7 @@ namespace CodeLuau.Tests
 	[TestClass]
 	public class SpeakerTests
 	{
-		private FakeRepository repository = new FakeRepository();
+		private readonly FakeRepository repository = new FakeRepository();
 
 		[TestMethod]
 		public void Register_EmptyFirstName_ReturnsFirstNameRequired()
@@ -171,8 +171,7 @@ namespace CodeLuau.Tests
 				Browser = new WebBrowser("test", 1),
 				Experience = 1,
 				Certifications = new System.Collections.Generic.List<string>(),
-				BlogUrl = "",
-				Sessions = new System.Collections.Generic.List<Session>() {
+                Sessions = new System.Collections.Generic.List<Session>() {
 				new Session("test title", "test description")
 			}
 			};
