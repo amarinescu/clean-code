@@ -27,15 +27,19 @@ namespace CodeLuau
 		/// <returns>speakerID</returns>
 		public RegisterResponse Register(IRepository repository)
 		{
-			// lets init some vars
-			int? speakerId = null;
             bool appr = false;
-			//var nt = new List<string> {"Node.js", "Docker"};
-			var ot = new List<string>() { "Cobol", "Punch Cards", "Commodore", "VBScript" };
 
-			//DEFECT #5274 DA 12/10/2012
-			//We weren't filtering out the prodigy domain so I added it.
+            var ot = new List<string>() { "Cobol", "Punch Cards", "Commodore", "VBScript" };
 			var domains = new List<string>() { "aol.com", "prodigy.com", "compuserve.com" };
+            var emps = new List<string>() { "Pluralsight", "Microsoft", "Google" };
+
+            bool good = Exp > 10 || HasBlog || Certifications.Count() > 3 || emps.Contains(Employer);
+
+            int? speakerId;
+
+            appr = CheckAbleSession(appr, ot);
+            speakerId = SaveSpeaker(repository);
+
 
             if (string.IsNullOrWhiteSpace(FirstName))            
                 return new RegisterResponse(RegisterError.FirstNameRequired);
@@ -46,45 +50,19 @@ namespace CodeLuau
             if (string.IsNullOrWhiteSpace(Email))
                 return new RegisterResponse(RegisterError.EmailRequired);
 
+            if (!good)
+                good = GetDomain(good, domains);
 
-            //put list of employers in array
-            List<string> emps = EmployersToArray();
+            if (!good)
+                return new RegisterResponse(RegisterError.SpeakerDoesNotMeetStandards);
 
-                        bool good = Exp > 10 || HasBlog || Certifications.Count() > 3 || emps.Contains(Employer);
+            if (!IsSession())
+                return new RegisterResponse(RegisterError.NoSessionsProvided);
 
-                        if (!good)
-                        {
+            if (!appr)
+                return new RegisterResponse(RegisterError.NoSessionsApproved);
 
-                            good = GetDomain(good, domains);
-
-                        }
-
-                        if (good)
-                        {
-
-                            if (!IsSession())
-                                return new RegisterResponse(RegisterError.NoSessionsProvided);
-
-                            appr = CheckAbleSession(appr, ot);
-
-                            if (!appr)
-                                return new RegisterResponse(RegisterError.NoSessionsApproved);
-
-                            speakerId = SaveSpeaker(repository);
-
-
-                        }
-                        else
-                        {
-                            return new RegisterResponse(RegisterError.SpeakerDoesNotMeetStandards);
-                        }
-
-
-			
-
-
-			//if we got this far, the speaker is registered.
-			return new RegisterResponse((int)speakerId);
+            return new RegisterResponse((int)speakerId);
 		}
 
         private global::System.Int32? SaveSpeaker(IRepository repository)
@@ -93,6 +71,7 @@ namespace CodeLuau
             FeeCalculation();
 
             speakerId = repository.SaveSpeaker(this);
+
             return speakerId;
         }
 
@@ -125,11 +104,6 @@ namespace CodeLuau
 
 
 
-        private static List<string> EmployersToArray()
-        {
-            return new List<string>() { "Pluralsight", "Microsoft", "Google" };
-        }
-
         private bool IsSession()
         {
             return Sessions.Count() != 0;
@@ -139,19 +113,20 @@ namespace CodeLuau
 
         private void FeeCalculation()
         {
-            if (CheckExpRange(0, 1))
+
+            if (IsExpBetween(0, 1))
             {
                 RegistrationFee = 500;
             }
-            else if (CheckExpRange(2, 3))
+            else if (IsExpBetween(2, 3))
             {
                 RegistrationFee = 250;
             }
-            else if (CheckExpRange(4, 5))
+            else if (IsExpBetween(4, 5))
             {
                 RegistrationFee = 100;
             }
-            else if (CheckExpRange(6, 9))
+            else if (IsExpBetween(6, 9))
             {
                 RegistrationFee = 50;
             }
@@ -161,9 +136,8 @@ namespace CodeLuau
             }
         }
 
-        private bool CheckExpRange(int inital, int final)
-        {
-            
+        private bool IsExpBetween(int inital, int final)
+        {            
             return Exp >= inital && Exp <= final;
         }
 
