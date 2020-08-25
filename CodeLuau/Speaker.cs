@@ -22,144 +22,112 @@ namespace CodeLuau
 		public List<Session> Sessions { get; set; }
 
 		/// <summary>
+        /// Calculate fee based on speaker's experience
+        /// </summary>
+        /// <param name="experience">How much experience in years the speaker has</param>
+        /// <returns>Fee for the speaker</returns>
+        
+        public int CalculateFee(int? experience)
+        {
+            return experience switch
+            {
+                int n when (n <= 1) => 500,
+                int n when (n >= 2 && n <= 3) => 250,
+                int n when (n >= 4 && n <= 5) => 100,
+                int n when (n >= 6 && n <= 9) => 50,
+                _ => 0,
+            };
+        }
+
+        /// <summary>
+        /// Check if a speaker has any sessions about any of the technologies in the list
+        /// </summary>
+        /// <param name="sessions">Sessions where to perform search</param>
+        /// <param name="technologies">List of technologies to look for</param>
+        /// <returns>True if there are no sessions for the technologies in the list</returns>
+        public bool HasListedTechs(List<Session> sessions, List<string> technologies)
+        {
+            foreach (var session in sessions)
+            {
+                foreach (var tech in technologies)
+                {
+                    if (session.Title.Contains(tech) || session.Description.Contains(tech))
+                    {
+                        session.Approved = false;
+                        return false;
+                    }
+                    else
+                    {
+                        session.Approved = true;
+                    }
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
 		/// Register a speaker
 		/// </summary>
 		/// <returns>speakerID</returns>
+
 		public RegisterResponse Register(IRepository repository)
 		{
-			// lets init some vars
 			int? speakerId = null;
-			bool good = false;
-			bool appr = false;
-			//var nt = new List<string> {"Node.js", "Docker"};
-			var ot = new List<string>() { "Cobol", "Punch Cards", "Commodore", "VBScript" };
-
-			//DEFECT #5274 DA 12/10/2012
-			//We weren't filtering out the prodigy domain so I added it.
+			bool speakerStandart; //speaker meets standarts
+			bool speakerApproved = false;
+			var oldTech = new List<string>() { "Cobol", "Punch Cards", "Commodore", "VBScript" };
 			var domains = new List<string>() { "aol.com", "prodigy.com", "compuserve.com" };
+            var employers = new List<string>() { "Pluralsight", "Microsoft", "Google" };
+            string emailDomain = Email.Split('@').Last();
 
-			if (!string.IsNullOrWhiteSpace(FirstName))
-			{
-				if (!string.IsNullOrWhiteSpace(LastName))
-				{
-					if (!string.IsNullOrWhiteSpace(Email))
-					{
-						//put list of employers in array
-						var emps = new List<string>() { "Pluralsight", "Microsoft", "Google" };
-
-						good = Exp > 10 || HasBlog || Certifications.Count() > 3 || emps.Contains(Employer);
-
-						if (!good)
-						{
-							//need to get just the domain from the email
-							string emailDomain = Email.Split('@').Last();
-
-							if (!domains.Contains(emailDomain) && (!(Browser.Name == WebBrowser.BrowserName.InternetExplorer && Browser.MajorVersion < 9)))
-							{
-								good = true;
-							}
-						}
-
-						if (good)
-						{
-							if (Sessions.Count() != 0)
-							{
-								foreach (var session in Sessions)
-								{
-									//foreach (var tech in nt)
-									//{
-									//    if (session.Title.Contains(tech))
-									//    {
-									//        session.Approved = true;
-									//        break;
-									//    }
-									//}
-
-									foreach (var tech in ot)
-									{
-										if (session.Title.Contains(tech) || session.Description.Contains(tech))
-										{
-											session.Approved = false;
-											break;
-										}
-										else
-										{
-											session.Approved = true;
-											appr = true;
-										}
-									}
-								}
-							}
-							else
-							{
-								return new RegisterResponse(RegisterError.NoSessionsProvided);
-							}
-
-							if (appr)
-							{
-								//if we got this far, the speaker is approved
-								//let's go ahead and register him/her now.
-								//First, let's calculate the registration fee. 
-								//More experienced speakers pay a lower fee.
-								if (Exp <= 1)
-								{
-									RegistrationFee = 500;
-								}
-								else if (Exp >= 2 && Exp <= 3)
-								{
-									RegistrationFee = 250;
-								}
-								else if (Exp >= 4 && Exp <= 5)
-								{
-									RegistrationFee = 100;
-								}
-								else if (Exp >= 6 && Exp <= 9)
-								{
-									RegistrationFee = 50;
-								}
-								else
-								{
-									RegistrationFee = 0;
-								}
-
-
-								//Now, save the speaker and sessions to the db.
-								try
-								{
-									speakerId = repository.SaveSpeaker(this);
-								}
-								catch (Exception e)
-								{
-									//in case the db call fails 
-								}
-							}
-							else
-							{
-								return new RegisterResponse(RegisterError.NoSessionsApproved);
-							}
-						}
-						else
-						{
-							return new RegisterResponse(RegisterError.SpeakerDoesNotMeetStandards);
-						}
-					}
-					else
-					{
-						return new RegisterResponse(RegisterError.EmailRequired);
-					}
-				}
-				else
-				{
-					return new RegisterResponse(RegisterError.LastNameRequired);
-				}
-			}
-			else
-			{
+            if (string.IsNullOrWhiteSpace(FirstName))
 				return new RegisterResponse(RegisterError.FirstNameRequired);
+			if (string.IsNullOrWhiteSpace(LastName))
+				return new RegisterResponse(RegisterError.LastNameRequired);
+			if (string.IsNullOrWhiteSpace(Email))
+				return new RegisterResponse(RegisterError.EmailRequired);
+
+			speakerStandart = Exp > 10 || HasBlog || Certifications.Count() > 3 || employers.Contains(Employer);
+
+			if (!domains.Contains(emailDomain) && !(Browser.Name == WebBrowser.BrowserName.InternetExplorer && Browser.MajorVersion < 9))
+			{
+				speakerStandart = true;
 			}
 
-			//if we got this far, the speaker is registered.
-			return new RegisterResponse((int)speakerId);
+            if (!speakerStandart)
+            {
+                return new RegisterResponse(RegisterError.SpeakerDoesNotMeetStandards);
+            }
+            else
+            {
+                if (Sessions.Count() == 0)
+                {
+                    return new RegisterResponse(RegisterError.NoSessionsProvided);
+                }
+                else
+                {
+                    speakerApproved = HasListedTechs(Sessions, oldTech);
+                }
+
+                if (speakerApproved)
+                {
+                    RegistrationFee = CalculateFee(Exp);
+                    //save the speaker and sessions to the db.
+                    try
+                    {
+                        speakerId = repository.SaveSpeaker(this);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"{e.Message} has occured, cannot save data");
+                    }
+                }
+                else
+                {
+                    return new RegisterResponse(RegisterError.NoSessionsApproved);
+                }
+            }
+            return new RegisterResponse((int)speakerId);
 		}
 	}
 }
