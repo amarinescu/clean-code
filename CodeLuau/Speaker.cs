@@ -42,114 +42,105 @@ namespace CodeLuau
 			{
 				return new RegisterResponse(RegisterError.FirstNameRequired);
 			}
-			else
+			
+			if (string.IsNullOrWhiteSpace(LastName))
 			{
-				if (string.IsNullOrWhiteSpace(LastName))
+				return new RegisterResponse(RegisterError.LastNameRequired);
+			}
+				
+			if (string.IsNullOrWhiteSpace(Email))
+			{
+				return new RegisterResponse(RegisterError.EmailRequired);
+			}
+					
+			//put list of employers in array
+			var emps = new List<string>() { "Pluralsight", "Microsoft", "Google" };
+
+			good = Exp > 10 || HasBlog || Certifications.Count() > 3 || emps.Contains(Employer);
+
+			if (!good)
+			{
+				//need to get just the domain from the email
+				string emailDomain = Email.Split('@').Last();
+
+				if (!domains.Contains(emailDomain) && (!(Browser.Name == WebBrowser.BrowserName.InternetExplorer && Browser.MajorVersion < 9)))
 				{
-					return new RegisterResponse(RegisterError.LastNameRequired);
+					good = true;
 				}
-				else
+			}
+
+			if (!good)
+			{
+				return new RegisterResponse(RegisterError.SpeakerDoesNotMeetStandards);
+			}
+						
+			if (Sessions.Count() == 0)
+			{
+				return new RegisterResponse(RegisterError.NoSessionsProvided);
+			}
+			foreach (var session in Sessions)
+			{
+				foreach (var tech in ot)
 				{
-					if (string.IsNullOrWhiteSpace(Email))
+					if (session.Title.Contains(tech) || session.Description.Contains(tech))
 					{
-						return new RegisterResponse(RegisterError.EmailRequired);
+						session.Approved = false;
+						break;
 					}
 					else
 					{
-						//put list of employers in array
-						var emps = new List<string>() { "Pluralsight", "Microsoft", "Google" };
-
-						good = Exp > 10 || HasBlog || Certifications.Count() > 3 || emps.Contains(Employer);
-
-						if (!good)
-						{
-							//need to get just the domain from the email
-							string emailDomain = Email.Split('@').Last();
-
-							if (!domains.Contains(emailDomain) && (!(Browser.Name == WebBrowser.BrowserName.InternetExplorer && Browser.MajorVersion < 9)))
-							{
-								good = true;
-							}
-						}
-
-						if (!good)
-						{
-							return new RegisterResponse(RegisterError.SpeakerDoesNotMeetStandards);
-						}
-						else
-						{
-							if (Sessions.Count() == 0)
-							{
-								return new RegisterResponse(RegisterError.NoSessionsProvided);
-							}
-							else
-							{
-								foreach (var session in Sessions)
-								{
-
-
-									foreach (var tech in ot)
-									{
-										if (session.Title.Contains(tech) || session.Description.Contains(tech))
-										{
-											session.Approved = false;
-											break;
-										}
-										else
-										{
-											session.Approved = true;
-											appr = true;
-										}
-									}
-								}
-							}
-
-							if (!appr)
-							{
-								return new RegisterResponse(RegisterError.NoSessionsApproved);
-							}
-							else
-							{
-								//if we got this far, the speaker is approved
-								//let's go ahead and register him/her now.
-								//First, let's calculate the registration fee. 
-								//More experienced speakers pay a lower fee.
-								if (Exp <= 1)
-								{
-									RegistrationFee = 500;
-								}
-								else if (Exp >= 2 && Exp <= 3)
-								{
-									RegistrationFee = 250;
-								}
-								else if (Exp >= 4 && Exp <= 5)
-								{
-									RegistrationFee = 100;
-								}
-								else if (Exp >= 6 && Exp <= 9)
-								{
-									RegistrationFee = 50;
-								}
-								else
-								{
-									RegistrationFee = 0;
-								}
-
-
-								//Now, save the speaker and sessions to the db.
-								try
-								{
-									speakerId = repository.SaveSpeaker(this);
-								}
-								catch (Exception e)
-								{
-									//in case the db call fails 
-								}
-							}
-						}
+						session.Approved = true;
+						appr = true;
 					}
 				}
 			}
+					
+
+			if (!appr)
+			{
+				return new RegisterResponse(RegisterError.NoSessionsApproved);
+			}
+							
+			//if we got this far, the speaker is approved
+			//let's go ahead and register him/her now.
+			//First, let's calculate the registration fee. 
+			//More experienced speakers pay a lower fee.
+			if (Exp <= 1)
+			{
+				RegistrationFee = 500;
+			}
+			else if (Exp >= 2 && Exp <= 3)
+			{
+				RegistrationFee = 250;
+			}
+			else if (Exp >= 4 && Exp <= 5)
+			{
+				RegistrationFee = 100;
+			}
+			else if (Exp >= 6 && Exp <= 9)
+			{
+				RegistrationFee = 50;
+			}
+			else
+			{
+				RegistrationFee = 0;
+			}
+
+
+			//Now, save the speaker and sessions to the db.
+			try
+			{
+				speakerId = repository.SaveSpeaker(this);
+			}
+			catch (Exception e)
+			{
+				//in case the db call fails 
+			}
+							
+						
+					
+				
+			
 
 			//if we got this far, the speaker is registered.
 			return new RegisterResponse((int)speakerId);
