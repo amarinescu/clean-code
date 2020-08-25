@@ -44,18 +44,11 @@ namespace CodeLuau
             if (response != null)
                 return response;
 
-            bool isValid = MeetsStandartsSpeaker(_employers);
-
-            if (!isValid)
-            {
-                isValid = FilterByDomain();
-            }
-
+            bool isValid = MeetsStandartsSpeaker(_employers) || FilterByDomain();
             if (!isValid)
                 return new RegisterSpeaker(RegisterError.SpeakerDoesNotMeetStandards);
 
             var isApproved = Register_IsApproved(_technologies);
-
             if (!isApproved)
                 return new RegisterSpeaker(RegisterError.NoSessionsApproved);
 
@@ -134,24 +127,16 @@ namespace CodeLuau
         private int CalculateRegistrationFee()
         { 
             if (Experience <= MinExpLev1)
-            {
                 return RegFeeLevel1;
-            }
 
             if (Experience >= MinExpLev2 && Experience <= MinExpLev3)
-            {
                 return RegFeeLevel2;
-            }
 
             if (Experience >= MinExpLev4 && Experience <= MinExpLev5)
-            {
                 return RegFeeLevel3;
-            }
 
             if (Experience >= MinExpLev6 && Experience <= MinExpLev7)
-            {
                 return RegFeeLevel4;
-            }
 
             return RegFeeLevel5;
         }
