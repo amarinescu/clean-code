@@ -4,39 +4,26 @@ using System.Linq;
 
 namespace CodeLuau
 {
-	/// <summary>
-	/// Represents a single speaker
-	/// </summary>
-	public class Speaker
+    public class Speaker
 	{
 		public string FirstName { get; set; }
 		public string LastName { get; set; }
 		public string Email { get; set; }
-		public int? Exp { get; set; }
+		public int? Experience { get; set; }
 		public bool HasBlog { get; set; }
-		public string BlogURL { get; set; }
+		public string BlogUrl { get; set; }
 		public WebBrowser Browser { get; set; }
 		public List<string> Certifications { get; set; }
 		public string Employer { get; set; }
 		public int RegistrationFee { get; set; }
 		public List<Session> Sessions { get; set; }
 
-		/// <summary>
-		/// Register a speaker
-		/// </summary>
-		/// <returns>speakerID</returns>
 		public RegisterResponse Register(IRepository repository)
 		{
-			// lets init some vars
-			int? speakerId = null;
-			bool good = false;
-			bool appr = false;
-			//var nt = new List<string> {"Node.js", "Docker"};
-			var ot = new List<string>() { "Cobol", "Punch Cards", "Commodore", "VBScript" };
-
-			//DEFECT #5274 DA 12/10/2012
-			//We weren't filtering out the prodigy domain so I added it.
-			var domains = new List<string>() { "aol.com", "prodigy.com", "compuserve.com" };
+            int? speakerId = null;
+            bool isApproved = false;
+            var technologies = new List<string> { "Cobol", "Punch Cards", "Commodore", "VBScript" };
+            var domains = new List<string> { "aol.com", "prodigy.com", "compuserve.com" };
 
 			if (!string.IsNullOrWhiteSpace(FirstName))
 			{
@@ -44,87 +31,36 @@ namespace CodeLuau
 				{
 					if (!string.IsNullOrWhiteSpace(Email))
 					{
-						//put list of employers in array
-						var emps = new List<string>() { "Pluralsight", "Microsoft", "Google" };
+                        var employers = new List<string>() { "Pluralsight", "Microsoft", "Google" };
+                        var isValid = Experience > 10 || HasBlog || Certifications.Count() > 3 || employers.Contains(Employer);
 
-						good = Exp > 10 || HasBlog || Certifications.Count() > 3 || emps.Contains(Employer);
+						if (!isValid)
+                        {
+                            
+                            isValid = Email_IsValid(domains, isValid);
+                        }
 
-						if (!good)
+						if (isValid)
 						{
-							//need to get just the domain from the email
-							string emailDomain = Email.Split('@').Last();
-
-							if (!domains.Contains(emailDomain) && (!(Browser.Name == WebBrowser.BrowserName.InternetExplorer && Browser.MajorVersion < 9)))
-							{
-								good = true;
-							}
-						}
-
-						if (good)
-						{
-							if (Sessions.Count() != 0)
-							{
-								foreach (var session in Sessions)
-								{
-									//foreach (var tech in nt)
-									//{
-									//    if (session.Title.Contains(tech))
-									//    {
-									//        session.Approved = true;
-									//        break;
-									//    }
-									//}
-
-									foreach (var tech in ot)
-									{
-										if (session.Title.Contains(tech) || session.Description.Contains(tech))
-										{
-											session.Approved = false;
-											break;
-										}
-										else
-										{
-											session.Approved = true;
-											appr = true;
-										}
-									}
-								}
-							}
+                          
+                            if (Sessions.Count != 0)
+                            {
+                                isApproved = Session_IsApproved(technologies, isApproved);
+                            }
 							else
 							{
 								return new RegisterResponse(RegisterError.NoSessionsProvided);
 							}
 
-							if (appr)
+							if (isApproved)
 							{
-								//if we got this far, the speaker is approved
-								//let's go ahead and register him/her now.
-								//First, let's calculate the registration fee. 
-								//More experienced speakers pay a lower fee.
-								if (Exp <= 1)
-								{
-									RegistrationFee = 500;
-								}
-								else if (Exp >= 2 && Exp <= 3)
-								{
-									RegistrationFee = 250;
-								}
-								else if (Exp >= 4 && Exp <= 5)
-								{
-									RegistrationFee = 100;
-								}
-								else if (Exp >= 6 && Exp <= 9)
-								{
-									RegistrationFee = 50;
-								}
-								else
-								{
-									RegistrationFee = 0;
-								}
-
-
-								//Now, save the speaker and sessions to the db.
-								try
+				
+                                RegistrationFee = Experience <= 1 ? 500
+                                    : Experience >= 2 && Experience <= 3 ? 250
+                                    : Experience >= 4 && Experience <= 5 ? 100
+                                    : Experience >= 6 && Experience <= 9 ? 50
+                                    : 0;
+                                try
 								{
 									speakerId = repository.SaveSpeaker(this);
 								}
@@ -157,9 +93,43 @@ namespace CodeLuau
 			{
 				return new RegisterResponse(RegisterError.FirstNameRequired);
 			}
-
-			//if we got this far, the speaker is registered.
+            
 			return new RegisterResponse((int)speakerId);
 		}
-	}
+
+        private bool Session_IsApproved(List<string> technologies, bool isApproved)
+        {
+            foreach (var session in Sessions)
+            {
+                foreach (var tech in technologies)
+                {
+                    if (session.Title.Contains(tech) || session.Description.Contains(tech))
+                    {
+                        session.Approved = false;
+                        break;
+                    }
+                    else
+                    {
+                        session.Approved = true;
+                        isApproved = true;
+                    }
+                }
+            }
+
+            return isApproved;
+        }
+
+        private bool Email_IsValid(List<string> domains, bool isValid)
+        {
+            string emailDomain = Email.Split('@').Last();
+
+            if (!domains.Contains(emailDomain) &&
+                (!(Browser.Name == WebBrowser.BrowserName.InternetExplorer && Browser.MajorVersion < 9)))
+            {
+                isValid = true;
+            }
+
+            return isValid;
+        }
+    }
 }
