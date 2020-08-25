@@ -10,13 +10,6 @@ namespace CodeLuau
     public class Speaker
     {
 
-        public Speaker(string firstName, string lastName, string email)
-        {
-            FirstName = firstName;
-            LastName = lastName;
-            Email = email;
-        }
-
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Email { get; set; }
@@ -28,6 +21,14 @@ namespace CodeLuau
         public string Employer { get; set; }
         public int RegistrationFee { get; set; }
         public List<Session> Sessions { get; set; }
+
+        public Speaker(string firstName, string lastName, string email)
+        {
+            FirstName = firstName;
+            LastName = lastName;
+            Email = email;
+        }
+
 
         List<string> notAllowedSessions = new List<string>() { "Cobol", "Punch Cards", "Commodore", "VBScript" };
         List<string> notAllowedDomains = new List<string>() { "aol.com", "prodigy.com", "compuserve.com" };
@@ -62,9 +63,7 @@ namespace CodeLuau
 
             CountingRegistrationFee();
             
-            int speakerId = SessionsSaving(repository);
-
-            return new RegisterResponse(speakerId);
+            return new RegisterResponse(SaveSpeaker(repository));
         }
 
         private bool EnoughExpirienced(List<string> notAllowedDomains, List<string> employers)
@@ -102,7 +101,7 @@ namespace CodeLuau
                 RegistrationFee = 0;
         }
 
-        private int SessionsSaving(IRepository repository)
+        private int SaveSpeaker(IRepository repository)
         {
             try
             {
