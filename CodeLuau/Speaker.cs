@@ -66,15 +66,6 @@ namespace CodeLuau
 							{
 								foreach (var session in Sessions)
 								{
-									//foreach (var tech in nt)
-									//{
-									//    if (session.Title.Contains(tech))
-									//    {
-									//        session.Approved = true;
-									//        break;
-									//    }
-									//}
-
 									foreach (var tech in ot)
 									{
 										if (session.Title.Contains(tech) || session.Description.Contains(tech))
