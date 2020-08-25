@@ -169,9 +169,9 @@ namespace CodeLuau.Tests
 				Employer = "Example Employer",
 				HasBlog = true,
 				Browser = new WebBrowser("test", 1),
-				Exp = 1,
+                Experience = 1,
 				Certifications = new System.Collections.Generic.List<string>(),
-				BlogURL = "",
+				BlogUrl = "",
 				Sessions = new System.Collections.Generic.List<Session>() {
 				new Session("test title", "test description")
 			}
