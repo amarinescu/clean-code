@@ -79,28 +79,34 @@ namespace CodeLuau
         {
             foreach (var session in Sessions)
             {
-                foreach (var tech in ot)
-                {
-                    bool isTechInTitle = session.Title.Contains(tech);
-                    bool isTechInDescription = session.Description.Contains(tech);
-                    
-                    if (isTechInTitle || isTechInDescription)
-                    {
-                        session.Approved = false;
-                        break;
-                    }
-                    else
-                    {
-                        session.Approved = true;
-                        appr = true;
-
-                    }
-                }
+                appr = SubmitOt(appr, ot, session);
             }
 
             return appr;
         }
 
+        private static bool SubmitOt(bool appr, List<string> ot, Session session)
+        {
+            foreach (var tech in ot)
+            {
+                bool isTechInTitle = session.Title.Contains(tech);
+                bool isTechInDescription = session.Description.Contains(tech);
+
+                if (isTechInTitle || isTechInDescription)
+                {
+                    session.Approved = false;
+                    break;
+                }
+                else
+                {
+                    session.Approved = true;
+                    appr = true;
+
+                }
+            }
+
+            return appr;
+        }
 
 
 
@@ -114,26 +120,22 @@ namespace CodeLuau
         private void FeeCalculation()
         {
 
-            if (IsExpBetween(0, 1))
-            {
+            if (IsExpBetween(0, 1))                
                 RegistrationFee = 500;
-            }
-            else if (IsExpBetween(2, 3))
-            {
+            
+            else if (IsExpBetween(2, 3))            
                 RegistrationFee = 250;
-            }
-            else if (IsExpBetween(4, 5))
-            {
+            
+            else if (IsExpBetween(4, 5))            
                 RegistrationFee = 100;
-            }
-            else if (IsExpBetween(6, 9))
-            {
+            
+            else if (IsExpBetween(6, 9))            
                 RegistrationFee = 50;
-            }
-            else
-            {
+            
+            else            
                 RegistrationFee = 0;
-            }
+            
+
         }
 
         private bool IsExpBetween(int inital, int final)
