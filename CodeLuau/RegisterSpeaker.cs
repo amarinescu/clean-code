@@ -1,13 +1,13 @@
 ﻿namespace CodeLuau
 {
-	public class RegisterResponse
+	public class RegisterSpeaker
 	{
-		public RegisterResponse(int speakerId)
+		public RegisterSpeaker(int speakerId)
 		{
 			this.SpeakerId = speakerId;
 		}
 
-		public RegisterResponse(RegisterError? error)
+		public RegisterSpeaker(RegisterError? error)
 		{
 			this.Error = error;
 		}
