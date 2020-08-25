@@ -38,11 +38,23 @@ namespace CodeLuau
 			//We weren't filtering out the prodigy domain so I added it.
 			var domains = new List<string>() { "aol.com", "prodigy.com", "compuserve.com" };
 
-			if (!string.IsNullOrWhiteSpace(FirstName))
+			if (string.IsNullOrWhiteSpace(FirstName))
 			{
-				if (!string.IsNullOrWhiteSpace(LastName))
+				return new RegisterResponse(RegisterError.FirstNameRequired);
+			}
+			else
+			{
+				if (string.IsNullOrWhiteSpace(LastName))
 				{
-					if (!string.IsNullOrWhiteSpace(Email))
+					return new RegisterResponse(RegisterError.LastNameRequired);
+				}
+				else
+				{
+					if (string.IsNullOrWhiteSpace(Email))
+					{
+						return new RegisterResponse(RegisterError.EmailRequired);
+					}
+					else
 					{
 						//put list of employers in array
 						var emps = new List<string>() { "Pluralsight", "Microsoft", "Google" };
@@ -60,12 +72,22 @@ namespace CodeLuau
 							}
 						}
 
-						if (good)
+						if (!good)
 						{
-							if (Sessions.Count() != 0)
+							return new RegisterResponse(RegisterError.SpeakerDoesNotMeetStandards);
+						}
+						else
+						{
+							if (Sessions.Count() == 0)
+							{
+								return new RegisterResponse(RegisterError.NoSessionsProvided);
+							}
+							else
 							{
 								foreach (var session in Sessions)
 								{
+
+
 									foreach (var tech in ot)
 									{
 										if (session.Title.Contains(tech) || session.Description.Contains(tech))
@@ -81,12 +103,12 @@ namespace CodeLuau
 									}
 								}
 							}
-							else
-							{
-								return new RegisterResponse(RegisterError.NoSessionsProvided);
-							}
 
-							if (appr)
+							if (!appr)
+							{
+								return new RegisterResponse(RegisterError.NoSessionsApproved);
+							}
+							else
 							{
 								//if we got this far, the speaker is approved
 								//let's go ahead and register him/her now.
@@ -124,29 +146,9 @@ namespace CodeLuau
 									//in case the db call fails 
 								}
 							}
-							else
-							{
-								return new RegisterResponse(RegisterError.NoSessionsApproved);
-							}
-						}
-						else
-						{
-							return new RegisterResponse(RegisterError.SpeakerDoesNotMeetStandards);
 						}
 					}
-					else
-					{
-						return new RegisterResponse(RegisterError.EmailRequired);
-					}
 				}
-				else
-				{
-					return new RegisterResponse(RegisterError.LastNameRequired);
-				}
-			}
-			else
-			{
-				return new RegisterResponse(RegisterError.FirstNameRequired);
 			}
 
 			//if we got this far, the speaker is registered.
