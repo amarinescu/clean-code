@@ -18,37 +18,18 @@ namespace CodeLuau
         public int RegistrationFee { get; set; }
         public List<Session> Sessions { get; set; }
 
-        private const int RequiredCertifications = 3;
-        private const int RequiredExperience = 10;
-        private const int MaxVersionBrowser = 9;
-        private const int MinExpLev1 = 1;
-        private const int MinExpLev2 = 2;
-        private const int MinExpLev3 = 3;
-        private const int MinExpLev4 = 4;
-        private const int MinExpLev5 = 5;
-        private const int MinExpLev6 = 6;
-        private const int MinExpLev7 = 9;
-        private const int RegFeeLevel1 = 500;
-        private const int RegFeeLevel2 = 250;
-        private const int RegFeeLevel3 = 100;
-        private const int RegFeeLevel4 = 50;
-        private const int RegFeeLevel5 = 0;
-        private readonly List<string> _technologies = new List<string>() { "Cobol", "Punch Cards", "Commodore", "VBScript" };
-        private readonly List<string> _employers = new List<string>() { "Pluralsight", "Microsoft", "Google" };
-        private readonly List<string> _domains = new List<string>() { "aol.com", "prodigy.com", "compuserve.com" };
-
-
         public RegisterSpeaker Register(IRepository repository)
         {
+
             var response = ValidateSpeaker();
             if (response != null)
                 return response;
 
-            bool isValid = MeetsStandartsSpeaker(_employers) || FilterByDomain();
+            bool isValid = MeetsStandartsSpeaker() || FilterByDomain();
             if (!isValid)
                 return new RegisterSpeaker(RegisterError.SpeakerDoesNotMeetStandards);
 
-            var isApproved = Register_IsApproved(_technologies);
+            var isApproved = Register_IsApproved();
             if (!isApproved)
                 return new RegisterSpeaker(RegisterError.NoSessionsApproved);
 
@@ -58,8 +39,12 @@ namespace CodeLuau
             return new RegisterSpeaker((int)speakerId);
         }
 
-        private bool MeetsStandartsSpeaker(List<string> employers)
+        private bool MeetsStandartsSpeaker()
         {
+            const int RequiredCertifications = 3; 
+            const int RequiredExperience = 10;
+            var employers = new List<string>() { "Pluralsight", "Microsoft", "Google" };
+
             return Experience > RequiredExperience || HasBlog || Certifications.Count() > RequiredCertifications || employers.Contains(Employer);
         }
 
@@ -80,11 +65,14 @@ namespace CodeLuau
         }
 
         private bool FilterByDomain()
-        {
+        { 
+            const int MaxVersionBrowser = 9;
             bool meetsCriteria = false;
+            var domains = new List<string>() { "aol.com", "prodigy.com", "compuserve.com" }; 
+            
             string emailDomain = GetEmailDomain();
 
-            if (!_domains.Contains(emailDomain) &&
+            if (!domains.Contains(emailDomain) &&
                 (!(Browser.Name == WebBrowser.BrowserName.InternetExplorer && Browser.MajorVersion < MaxVersionBrowser)))
             {
                 meetsCriteria = true;
@@ -93,9 +81,11 @@ namespace CodeLuau
             return meetsCriteria;
         }
 
-        private bool Register_IsApproved(List<string> technologies)
+        private bool Register_IsApproved()
         {
             bool isApproved = false;
+            var technologies = new List<string>() { "Cobol", "Punch Cards", "Commodore", "VBScript" }; 
+
             foreach (Session session in Sessions)
             {
                 foreach (string technology in technologies)
@@ -126,6 +116,19 @@ namespace CodeLuau
 
         private int CalculateRegistrationFee()
         { 
+            const int MinExpLev1 = 1;
+            const int MinExpLev2 = 2; 
+            const int MinExpLev3 = 3;
+            const int MinExpLev4 = 4; 
+            const int MinExpLev5 = 5;
+            const int MinExpLev6 = 6;
+            const int MinExpLev7 = 9;
+            const int RegFeeLevel1 = 500;
+            const int RegFeeLevel2 = 250;
+            const int RegFeeLevel3 = 100;
+            const int RegFeeLevel4 = 50;
+            const int RegFeeLevel5 = 0;
+
             if (Experience <= MinExpLev1)
                 return RegFeeLevel1;
 
