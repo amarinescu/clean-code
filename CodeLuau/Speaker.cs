@@ -19,29 +19,6 @@ namespace CodeLuau
 
         public List<Session> Sessions { get; set; }
 
-        private readonly List<string> technologies = new List<string>()
-        {
-            "Cobol",
-            "Punch Cards",
-            "Commodore",
-            "VBScript"
-        };
-
-        private readonly List<string> employers = new List<string>()
-        {
-            "Pluralsight",
-            "Microsoft",
-            "Google"
-        };
-
-        private readonly List<string> domains = new List<string>()
-        {
-            "aol.com",
-            "prodigy.com",
-            "compuserve.com"
-        };
-
-        
 
         public RegisterResponse Register(IRepository repository)
         {
@@ -51,11 +28,11 @@ namespace CodeLuau
                 return response;
 
 
-            bool isValid = MeetsStandartsSpeaker(employers) || FilterByDomain();
+            bool isValid = MeetsStandartsSpeaker() || FilterByDomain();
             if (!isValid)
                 return new RegisterResponse(RegisterError.SpeakerDoesNotMeetStandards);
 
-            var isApproved = Session_IsApproved(technologies);
+            var isApproved = Session_IsApproved();
             if (!isApproved)
                 return new RegisterResponse(RegisterError.NoSessionsApproved);
 
@@ -67,8 +44,15 @@ namespace CodeLuau
         }
 
 
-        private bool Session_IsApproved(List<string> technologies)
+        private bool Session_IsApproved()
         {
+            var technologies = new List<string>()
+            {
+                "Cobol",
+                "Punch Cards",
+                "Commodore",
+                "VBScript"
+            };
             bool isApproved = false;
             foreach (Session session in Sessions)
             {
@@ -90,6 +74,12 @@ namespace CodeLuau
 
         private bool FilterByDomain()
         {
+            var domains = new List<string>()
+            {
+                "aol.com",
+                "prodigy.com",
+                "compuserve.com"
+            };
             bool meetsCriteria = false;
             string emailDomain = GetEmailDomain();
 
@@ -118,8 +108,14 @@ namespace CodeLuau
             return null;
         }
 
-        private bool MeetsStandartsSpeaker(List<string> employers)
+        private bool MeetsStandartsSpeaker()
         {
+            var employers = new List<string>()
+            {
+                "Pluralsight",
+                "Microsoft",
+                "Google"
+            };
             return Experience > 10 || HasBlog || Certifications.Count() > 3 ||
                    employers.Contains(Employer);
         }
