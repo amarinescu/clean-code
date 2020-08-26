@@ -16,111 +16,133 @@ namespace CodeLuau
         public List<string> Certifications { get; set; }
         public string Employer { get; set; }
         public int RegistrationFee { get; set; }
+
         public List<Session> Sessions { get; set; }
+
+        private readonly List<string> technologies = new List<string>()
+        {
+            "Cobol",
+            "Punch Cards",
+            "Commodore",
+            "VBScript"
+        };
+
+        private readonly List<string> employers = new List<string>()
+        {
+            "Pluralsight",
+            "Microsoft",
+            "Google"
+        };
+
+        private readonly List<string> domains = new List<string>()
+        {
+            "aol.com",
+            "prodigy.com",
+            "compuserve.com"
+        };
+
+        
 
         public RegisterResponse Register(IRepository repository)
         {
-            int? speakerId = null;
-            bool isApproved = false;
-            var technologies = new List<string> {"Cobol", "Punch Cards", "Commodore", "VBScript"};
-            var domains = new List<string> {"aol.com", "prodigy.com", "compuserve.com"};
+            var response = ValidateSpeaker();
 
-            if (string.IsNullOrWhiteSpace(FirstName))
-            {
-                return new RegisterResponse(RegisterError.FirstNameRequired);
-            }
+            if (response != null)
+                return response;
 
-            if (string.IsNullOrWhiteSpace(LastName))
-            {
-                return new RegisterResponse(RegisterError.LastNameRequired);
-            }
 
-            if (string.IsNullOrWhiteSpace(Email))
-            {
-                return new RegisterResponse(RegisterError.EmailRequired);
-            }
-
-            var employers = new List<string>() {"Pluralsight", "Microsoft", "Google"};
-            var isValid = Experience > 10 || HasBlog || Certifications.Count() > 3 ||
-                                  employers.Contains(Employer);
-
+            bool isValid = MeetsStandartsSpeaker(employers) || FilterByDomain();
             if (!isValid)
-            {
-                isValid = Email_IsValid(domains, isValid);
-            }
-
-            if (!isValid)
-            {
                 return new RegisterResponse(RegisterError.SpeakerDoesNotMeetStandards);
-            }
 
-            if (Sessions.Count == 0)
-            {
-                return new RegisterResponse(RegisterError.NoSessionsProvided);
-            }
-
-            isApproved = Session_IsApproved(technologies, isApproved);
-
-            if (isApproved == false)
-            {
+            var isApproved = Session_IsApproved(technologies);
+            if (!isApproved)
                 return new RegisterResponse(RegisterError.NoSessionsApproved);
-            }
 
-            RegistrationFee = Experience <= 1 ? 500
-                : Experience >= 2 && Experience <= 3 ? 250
-                : Experience >= 4 && Experience <= 5 ? 100
-                : Experience >= 6 && Experience <= 9 ? 50
-                : 0;
-            try
-            {
-                speakerId = repository.SaveSpeaker(this);
-            }
-            catch (Exception e)
-            {
-                //in case the db call fails 
-            }
-            
-            return new RegisterResponse((int)speakerId);
+            RegistrationFee = CalculateRegistrationFee();
+
+
+            int? speakerId = repository.SaveSpeaker(this);
+            return new RegisterResponse((int) speakerId);
         }
 
 
-       
-    
-
-
-    private bool Session_IsApproved(List<string> technologies, bool isApproved)
+        private bool Session_IsApproved(List<string> technologies)
         {
-            foreach (var session in Sessions)
+            bool isApproved = false;
+            foreach (Session session in Sessions)
             {
-                foreach (var tech in technologies)
+                foreach (string technology in technologies)
                 {
-                    if (session.Title.Contains(tech) || session.Description.Contains(tech))
+                    if (SesionContainsTechnology(session, technology))
                     {
                         session.Approved = false;
                         break;
                     }
-                    else
-                    {
-                        session.Approved = true;
-                        isApproved = true;
-                    }
+
+                    session.Approved = true;
+                    isApproved = true;
                 }
             }
 
             return isApproved;
         }
 
-        private bool Email_IsValid(List<string> domains, bool isValid)
+        private bool FilterByDomain()
         {
-            string emailDomain = Email.Split('@').Last();
+            bool meetsCriteria = false;
+            string emailDomain = GetEmailDomain();
 
             if (!domains.Contains(emailDomain) &&
                 (!(Browser.Name == WebBrowser.BrowserName.InternetExplorer && Browser.MajorVersion < 9)))
             {
-                isValid = true;
+                meetsCriteria = true;
             }
 
-            return isValid;
+            return meetsCriteria;
+        }
+
+        private RegisterResponse ValidateSpeaker()
+        {
+            if (string.IsNullOrWhiteSpace(FirstName))
+                return new RegisterResponse(RegisterError.FirstNameRequired);
+
+            if (string.IsNullOrWhiteSpace(LastName))
+                return new RegisterResponse(RegisterError.LastNameRequired);
+
+            if (string.IsNullOrWhiteSpace(Email))
+                return new RegisterResponse(RegisterError.EmailRequired);
+
+            if (!Sessions.Any())
+                return new RegisterResponse(RegisterError.NoSessionsProvided);
+            return null;
+        }
+
+        private bool MeetsStandartsSpeaker(List<string> employers)
+        {
+            return Experience > 10 || HasBlog || Certifications.Count() > 3 ||
+                   employers.Contains(Employer);
+        }
+
+        private string GetEmailDomain()
+        {
+            return Email.Split('@').Last();
+        }
+
+        private bool SesionContainsTechnology(Session session, string technology)
+        {
+            return session.Title.Contains(technology) || session.Description.Contains(technology);
+        }
+
+        private int CalculateRegistrationFee()
+        {
+            var RegistrationFee = Experience <= 1 ? 500
+                : Experience >= 2 && Experience <= 3 ? 250
+                : Experience >= 4 && Experience <= 5 ? 100
+                : Experience >= 6 && Experience <= 9 ? 50
+                : 0;
+
+            return RegistrationFee;
         }
     }
 }
